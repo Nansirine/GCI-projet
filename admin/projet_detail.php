@@ -4,6 +4,8 @@ require_once '../includes/auth.php';
 checkRole(['admin']);
 $projectId = isset($_GET['id']) && is_numeric($_GET['id']) ? (int)$_GET['id'] : 0;
 require_once '../config/database.php';
+require_once '../includes/functions.php';
+ensureDocumentDecisionColumns($pdo);
 
 $message = '';
 $messageType = '';
@@ -71,7 +73,8 @@ require_once '../includes/header.php';
                 <li class="nav-item"><a href="dashboard.php" class="nav-link"><i class="bi bi-house-door"></i> <span>Tableau de bord</span></a></li>
                 <li class="nav-item"><a href="projets.php" class="nav-link active"><i class="bi bi-folder2"></i> <span>Projets</span></a></li>
                 <li class="nav-item"><a href="taches.php" class="nav-link"><i class="bi bi-list-task"></i> <span>Tâches</span></a></li>
-                <li class="nav-item"><a href="utilisateurs.php" class="nav-link"><i class="bi bi-people"></i> <span>Utilisateurs</span></a></li>
+                <li class="nav-item"><a href="alertes.php" class="nav-link"><i class="bi bi-exclamation-triangle"></i> <span>Alertes</span></a></li>
+                <li class="nav-item"><a href="utilisateurs.php" class="nav-link"><i class="bi bi-person-gear"></i> <span>Administrateur</span></a></li>
                 <li class="nav-item"><a href="rapports.php" class="nav-link"><i class="bi bi-file-earmark-text"></i> <span>Rapports</span></a></li>
                 <li class="nav-item"><a href="statistiques.php" class="nav-link"><i class="bi bi-bar-chart"></i> <span>Statistiques</span></a></li>
                 <li class="nav-item"><a href="notifications.php" class="nav-link"><i class="bi bi-bell"></i> <span>Notifications</span></a></li>
@@ -188,7 +191,10 @@ require_once '../includes/header.php';
                                                 <td><i class="bi <?= documentIcon($plan['fichier']) ?>"></i> <?= htmlspecialchars($plan['titre']) ?></td>
                                                 <td><?= htmlspecialchars($plan['dessinateur_prenom'] . ' ' . $plan['dessinateur_nom']) ?></td>
                                                 <td><?= getBadgeStatut($plan['statut']) ?></td>
-                                                <td><?= (int)$plan['partage_client'] === 1 ? '<span class="badge bg-success">Visible</span>' : '<span class="badge bg-secondary">Non visible</span>' ?></td>
+                                                <td>
+                                                    <?= (int)$plan['partage_client'] === 1 ? '<span class="badge bg-success">Visible</span>' : '<span class="badge bg-secondary">Non visible</span>' ?>
+                                                    <?= getBadgeStatut($plan['client_decision'] ?? 'en_attente') ?>
+                                                </td>
                                                 <td><?= htmlspecialchars(formatDate($plan['date_upload'])) ?></td>
                                                 <td>
                                                     <?= renderDocumentActions('plan', (int)$plan['id'], $plan['fichier'], $plan['titre']) ?>

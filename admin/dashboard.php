@@ -2,7 +2,10 @@
 require_once '../includes/auth.php';
 checkRole(['admin']);
 require_once '../config/database.php';
+require_once '../includes/functions.php';
 
+// Message de bienvenue personnalisé
+$welcome = getWelcomeMessage($_SESSION['prenom'] ?? 'Admin', $_SESSION['nom'] ?? '', 'admin');
 
 $stats = [
     'total_projets' => (int)$pdo->query('SELECT COUNT(*) FROM projets')->fetchColumn(),
@@ -220,7 +223,8 @@ require_once '../includes/header.php';
                 <li class="nav-item"><a href="factures.php" class="nav-link"><i class="bi bi-receipt"></i><span>Factures</span></a></li>
                 <li class="nav-item"><a href="paiements.php" class="nav-link"><i class="bi bi-credit-card"></i><span>Paiements</span></a></li>
                 <li class="nav-item"><a href="taches.php" class="nav-link"><i class="bi bi-list-task"></i><span>Taches</span></a></li>
-                <li class="nav-item"><a href="utilisateurs.php" class="nav-link"><i class="bi bi-people"></i><span>Utilisateurs</span></a></li>
+                <li class="nav-item"><a href="alertes.php" class="nav-link"><i class="bi bi-exclamation-triangle"></i><span>Alertes</span></a></li>
+                <li class="nav-item"><a href="utilisateurs.php" class="nav-link"><i class="bi bi-person-gear"></i><span>Administrateur</span></a></li>
                 <li class="nav-item"><a href="rapports.php" class="nav-link"><i class="bi bi-file-earmark-text"></i><span>Rapports</span></a></li>
                 <li class="nav-item"><a href="statistiques.php" class="nav-link"><i class="bi bi-bar-chart"></i><span>Statistiques</span></a></li>
                 <li class="nav-item"><a href="notifications.php" class="nav-link"><i class="bi bi-bell"></i><span>Notifications</span></a></li>
@@ -245,6 +249,18 @@ require_once '../includes/header.php';
         </nav>
 
         <div class="content-area">
+            <!-- Message de bienvenue -->
+            <div class="welcome-banner">
+                <div class="welcome-banner-content">
+                    <div class="welcome-salutation">
+                        <span class="welcome-emoji"><?= $welcome['emoji'] ?></span>
+                        <span><?= $welcome['salutation'] ?></span>
+                    </div>
+                    <div class="welcome-name"><?= htmlspecialchars($welcome['nom_complet']) ?></div>
+                    <div class="welcome-message"><?= $welcome['message'] ?></div>
+                </div>
+            </div>
+            
             <div class="page-header dashboard-page-header">
                 <div>
                     <h1 class="page-title"><i class="bi bi-speedometer2"></i> Tableau de bord</h1>
@@ -377,7 +393,7 @@ require_once '../includes/header.php';
                 <div class="section-card fade-in">
                     <div class="section-header">
                         <div class="section-title"><i class="bi bi-exclamation-triangle"></i> Alertes recentes</div>
-                        <a href="../ingenieur/alertes.php" class="section-action">Voir</a>
+                        <a href="alertes.php" class="section-action">Voir</a>
                     </div>
                     <ul class="admin-alert-list">
                         <?php if (!$alerts): ?>
@@ -590,5 +606,4 @@ new Chart(revenuAnneeChart, {
 </script>
 
 <?php require_once '../includes/footer.php'; ?>
-
 

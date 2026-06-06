@@ -466,6 +466,17 @@
     transform: scale(1.1);
 }
 
+.btn-action-warning {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.btn-action-warning:hover {
+    background: #f59e0b;
+    color: #fff;
+    transform: scale(1.1);
+}
+
 /* Pagination */
 .pagination-container {
     display: flex;

@@ -24,7 +24,7 @@ function renderClientLayoutStart(string $active, string $icon, string $title): v
                 <li class="nav-item"><a href="dashboard.php" class="nav-link <?= $active === 'dashboard' ? 'active' : '' ?>"><i class="bi bi-house-door"></i><span>Tableau de bord</span></a></li>
                 <li class="nav-item"><a href="avancement.php" class="nav-link <?= $active === 'avancement' ? 'active' : '' ?>"><i class="bi bi-graph-up"></i><span>Avancement</span></a></li>
                 <li class="nav-item"><a href="plans.php" class="nav-link <?= $active === 'plans' ? 'active' : '' ?>"><i class="bi bi-file-earmark"></i><span>Plans</span></a></li>
-                <li class="nav-item"><a href="rapports.php" class="nav-link <?= $active === 'rapports' ? 'active' : '' ?>"><i class="bi bi-file-earmark-text"></i><span>Rapports</span></a></li>
+                <!-- <li class="nav-item"><a href="rapports.php" class="nav-link <?= $active === 'rapports' ? 'active' : '' ?>"><i class="bi bi-file-earmark-text"></i><span>Rapports</span></a></li> -->
                 <li class="nav-item"><a href="factures.php" class="nav-link <?= $active === 'factures' ? 'active' : '' ?>"><i class="bi bi-receipt"></i><span>Factures</span></a></li>
                 <li class="nav-item"><a href="demandes.php" class="nav-link <?= $active === 'demandes' ? 'active' : '' ?>"><i class="bi bi-chat"></i><span>Demandes</span></a></li>
                 <li class="nav-item"><a href="notifications.php" class="nav-link <?= $active === 'notifications' ? 'active' : '' ?>"><i class="bi bi-bell"></i><span>Notifications</span></a></li>

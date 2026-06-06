@@ -1,5 +1,12 @@
 <?php
 if (session_status() === PHP_SESSION_NONE) {
+    session_set_cookie_params([
+        'lifetime' => 0,
+        'path' => '/gestion_projet',
+        'secure' => !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off',
+        'httponly' => true,
+        'samesite' => 'Lax',
+    ]);
     session_start();
 }
 if (isset($_SESSION['user_id'])) {
@@ -7,8 +14,19 @@ if (isset($_SESSION['user_id'])) {
     exit();
 }
 $error = '';
+$success = '';
 if (isset($_GET['logout'])) {
-    $error = 'Déconnecté avec succès.';
+    $success = 'Vous etes deconnecte avec succes.';
+}
+if (isset($_GET['error'])) {
+    $errorMessages = [
+        'session_expired' => 'Votre session a expire. Connectez-vous a nouveau.',
+        'compte_inactif' => 'Votre compte est inactif ou indisponible.',
+    ];
+    $error = $errorMessages[$_GET['error']] ?? 'Une erreur est survenue. Veuillez reessayer.';
+}
+if (empty($_SESSION['login_csrf_token'])) {
+    $_SESSION['login_csrf_token'] = bin2hex(random_bytes(32));
 }
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     require_once __DIR__ . '/config/database.php';
@@ -16,26 +34,46 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $email = trim($_POST['email'] ?? '');
     $password = $_POST['password'] ?? '';
     $remember = isset($_POST['remember']);
-    $stmt = $pdo->prepare('SELECT * FROM utilisateurs WHERE email = ?');
-    $stmt->execute([$email]);
-    $user = $stmt->fetch();
-    if ($user && password_verify($password, $user['mot_de_passe'])) {
+    require_once __DIR__ . '/includes/auth.php';
+
+    if (!hash_equals($_SESSION['login_csrf_token'] ?? '', $_POST['csrf_token'] ?? '')) {
+        $error = 'Session invalide. Rechargez la page puis reessayez.';
+    } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        $error = 'Adresse email invalide.';
+    } elseif (!loginRateLimit($email)) {
+        $error = 'Trop de tentatives. Patientez quelques minutes avant de reessayer.';
+    } else {
+        $stmt = $pdo->prepare('SELECT * FROM utilisateurs WHERE email = ?');
+        $stmt->execute([$email]);
+        $user = $stmt->fetch();
+        if ($user && password_verify($password, $user['mot_de_passe'])) {
         if ($user['statut'] === 'inactif') {
-            $error = 'Compte désactivé.';
+            $error = 'Compte desactive.';
         } else {
+            resetLoginAttempts($email);
+            $_SESSION['login_csrf_token'] = bin2hex(random_bytes(32));
+            session_regenerate_id(true);
             $_SESSION['user_id'] = $user['id'];
             $_SESSION['nom'] = $user['nom'];
             $_SESSION['prenom'] = $user['prenom'];
             $_SESSION['email'] = $user['email'];
             $_SESSION['role'] = $user['role'];
             $_SESSION['photo'] = $user['photo'];
-            // Cookie "se souvenir de moi"
             if ($remember) {
-                setcookie('remember_me', $user['id'], time() + 60*60*24*30, '/');
+                setcookie('remember_me', (string)$user['id'], [
+                    'expires' => time() + 60*60*24*30,
+                    'path' => '/gestion_projet',
+                    'httponly' => true,
+                    'samesite' => 'Lax',
+                ]);
             }
-            // MAJ dernière connexion
             $pdo->prepare('UPDATE utilisateurs SET derniere_connexion = NOW() WHERE id = ?')->execute([$user['id']]);
-            // Redirection selon rôle
+            $redirect = $_SESSION['redirect_after_login'] ?? null;
+            unset($_SESSION['redirect_after_login']);
+            if ($redirect && strpos($redirect, '/gestion_projet/') === 0) {
+                header('Location: ' . $redirect);
+                exit;
+            }
             switch ($user['role']) {
                 case 'admin':
                     header('Location: /gestion_projet/admin/dashboard.php'); exit;
@@ -45,10 +83,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     header('Location: /gestion_projet/dessinateur/dashboard.php'); exit;
                 case 'client':
                     header('Location: /gestion_projet/client/dashboard.php'); exit;
+                default:
+                    session_destroy();
+                    $error = 'Role utilisateur non reconnu.';
             }
         }
     } else {
         $error = 'Identifiants invalides.';
+    }
     }
 }
 ?>
@@ -87,14 +129,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <p class="login-subtitle">Gestion de projets professionnels</p>
             </div>
             
-            <?php if ($error): ?>
-                <div class="login-alert <?= strpos($error, 'succès') !== false ? 'login-alert-success' : 'login-alert-error' ?>">
-                    <i class="bi <?= strpos($error, 'succès') !== false ? 'bi-check-circle-fill' : 'bi-exclamation-triangle-fill' ?>"></i>
-                    <span><?= htmlspecialchars($error) ?></span>
+            <?php if ($error || $success): ?>
+                <div class="login-alert <?= $success ? 'login-alert-success' : 'login-alert-error' ?>">
+                    <i class="bi <?= $success ? 'bi-check-circle-fill' : 'bi-exclamation-triangle-fill' ?>"></i>
+                    <span><?= htmlspecialchars($success ?: $error) ?></span>
                 </div>
             <?php endif; ?>
             
             <form method="post" class="login-form" autocomplete="off">
+                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['login_csrf_token']) ?>">
                 <div class="form-group-modern">
                     <label for="email" class="form-label-modern">Adresse Email</label>
                     <div class="input-with-icon">
@@ -120,24 +163,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </div>
                 
                 <button type="submit" class="btn-login" id="loginBtn">
-                    <span id="loginText">Se Connecter</span>
+                    <span id="loginText">Se connecter</span>
                     <span id="loginSpinner" class="spinner d-none"></span>
                 </button>
             </form>
-            
+
             <div class="login-footer">
                 <a href="reset_password.php" class="login-link">Mot de passe oublié ?</a>
             </div>
-            
-            <div class="login-info">
-                <p class="login-info-text">Accès réservé aux utilisateurs autorisés</p>
-                <div class="login-info-roles">
-                    <span class="role-badge">Admin</span>
-                    <span class="role-badge">Ingénieur</span>
-                    <span class="role-badge">Dessinateur</span>
-                    <span class="role-badge">Client</span>
-                </div>
-            </div>
+
         </div>
     </div>
     

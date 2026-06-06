@@ -2,6 +2,8 @@
 require_once '../includes/auth.php';
 checkRole(['ingenieur', 'admin']);
 require_once '../config/database.php';
+require_once '../includes/functions.php';
+ensureTaskDependencyColumn($pdo);
 
 $taskId = isset($_GET['id']) && is_numeric($_GET['id']) ? (int)$_GET['id'] : 0;
 $userId = (int)$_SESSION['user_id'];
@@ -13,17 +15,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $taskId) {
     $allowedStatus = ['a_faire', 'en_cours', 'en_revision', 'termine', 'bloque'];
 
     if (in_array($statut, $allowedStatus, true)) {
-        $stmt = $pdo->prepare('UPDATE taches SET pourcentage = ?, statut = ? WHERE id = ?');
-        $stmt->execute([$pourcentage, $statut, $taskId]);
+        $dateCompletion = $statut === 'termine' ? date('Y-m-d') : null;
+        $stmt = $pdo->prepare('UPDATE taches SET pourcentage = ?, statut = ?, date_completion = ? WHERE id = ?');
+        $stmt->execute([$pourcentage, $statut, $dateCompletion, $taskId]);
+        $projectStmt = $pdo->prepare('SELECT projet_id FROM taches WHERE id = ?');
+        $projectStmt->execute([$taskId]);
+        $projectId = (int)$projectStmt->fetchColumn();
+        if ($projectId) {
+            updateProjectProgress($pdo, $projectId);
+        }
         $message = 'Tache mise a jour avec succes.';
     }
 }
 
 $stmt = $pdo->prepare('
-    SELECT t.*, p.nom AS projet_nom, u.nom AS responsable_nom, u.prenom AS responsable_prenom
+    SELECT t.*, p.nom AS projet_nom, u.nom AS responsable_nom, u.prenom AS responsable_prenom,
+           dep.titre AS dependance_titre
     FROM taches t
     LEFT JOIN projets p ON t.projet_id = p.id
     LEFT JOIN utilisateurs u ON t.assigne_a = u.id
+    LEFT JOIN taches dep ON dep.id = t.dependance_id
     WHERE t.id = ?
 ');
 $stmt->execute([$taskId]);
@@ -77,6 +88,12 @@ require_once '../includes/layout.php';
                                 <div class="card-modern p-3 h-100">
                                     <div class="text-muted small">Echeance</div>
                                     <strong><?= htmlspecialchars($task['date_echeance'] ?? '-') ?></strong>
+                                </div>
+                            </div>
+                            <div class="col-md-12">
+                                <div class="card-modern p-3 h-100">
+                                    <div class="text-muted small">Dependance</div>
+                                    <strong><?= htmlspecialchars($task['dependance_titre'] ?? 'Aucune dependance') ?></strong>
                                 </div>
                             </div>
                         </div>

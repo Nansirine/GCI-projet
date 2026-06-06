@@ -3,6 +3,7 @@ require_once '../includes/auth.php';
 checkRole(['ingenieur']);
 $user_id = $_SESSION['user_id'];
 require_once '../config/database.php';
+require_once '../includes/functions.php';
 
 $stmt = $pdo->prepare('
     SELECT r.*, p.nom AS projet_nom
@@ -23,6 +24,9 @@ require_once '../includes/layout.php';
         <h2 class="fw-bold">Mes Rapports</h2>
         <a href="rapport_create.php" class="btn btn-success">+ Nouveau Rapport</a>
     </div>
+    <?php if (isset($_GET['created'])): ?>
+        <div class="alert alert-success">Rapport soumis avec succes.</div>
+    <?php endif; ?>
     <div class="table-responsive">
         <table class="table table-hover align-middle">
             <thead class="table-light">

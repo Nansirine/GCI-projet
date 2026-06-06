@@ -1,6 +1,12 @@
-
 <?php
 if (session_status() === PHP_SESSION_NONE) {
+  session_set_cookie_params([
+    'lifetime' => 0,
+    'path' => '/gestion_projet',
+    'secure' => !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off',
+    'httponly' => true,
+    'samesite' => 'Lax',
+  ]);
   session_start();
 }
 require_once __DIR__.'/../config/config.php';
@@ -10,7 +16,7 @@ require_once __DIR__.'/functions.php';
 function checkAuth(): void {
   if (empty($_SESSION['user_id'])) {
     $_SESSION['redirect_after_login'] = $_SERVER['REQUEST_URI'];
-    header('Location: /login.php?error=session_expired');
+    header('Location: /gestion_projet/login.php?error=session_expired');
     exit;
   }
   // Vérifier que l'utilisateur existe toujours et est actif
@@ -20,7 +26,7 @@ function checkAuth(): void {
   $user = $stmt->fetch();
   if (!$user || $user['statut'] === 'inactif') {
     session_destroy();
-    header('Location: /login.php?error=compte_inactif');
+    header('Location: /gestion_projet/login.php?error=compte_inactif');
     exit;
   }
 }

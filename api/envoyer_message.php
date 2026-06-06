@@ -24,7 +24,7 @@ try {
   createNotification($pdo, $dest_id,
     'Nouveau message de '.$_SESSION['prenom'],
     substr($contenu, 0, 80).'...',
-    'info', '/ingenieur/messages.php'
+    'info', userMessagesLink($pdo, $dest_id)
   );
   echo json_encode(['success' => true]);
 } catch(Exception $e) {

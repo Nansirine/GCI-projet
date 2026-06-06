@@ -4,6 +4,15 @@ define('APP_ENV', 'development'); // 'production' en prod
 define('APP_URL', 'http://localhost/gestion_projet');
 define('APP_NAME', 'Buildflow');
 
+// Configuration email SMTP
+define('SMTP_HOST', 'smtp.gmail.com');
+define('SMTP_USERNAME', 'nansirinesikirou1@gmail.com');
+define('SMTP_PASSWORD', 'lwnr kizk dwmu nvvh'); // Mot de passe d’application Gmail
+define('SMTP_PORT', 587);
+define('SMTP_SECURE', 'tls');
+define('SMTP_FROM_EMAIL', SMTP_USERNAME);
+define('SMTP_FROM_NAME', 'genieconcept');
+
 
 
 // Masquer erreurs en production
@@ -25,5 +34,14 @@ header('Referrer-Policy: strict-origin-when-cross-origin');
 define('MAX_UPLOAD_SIZE', 20 * 1024 * 1024);  // 20MB
 define('UPLOAD_PLANS', __DIR__.'/../uploads/plans/');
 define('UPLOAD_RAPPORTS', __DIR__.'/../uploads/rapports/');
-define('ALLOWED_PLAN_TYPES', ['pdf','png','jpg','jpeg','dwg']);
-define('ALLOWED_RAPPORT_TYPES', ['pdf','doc','docx','jpg','jpeg','png']);
+define('ALLOWED_CIVIL_FILE_TYPES', [
+  'dwg','dxf','dgn',
+  'rvt','rte','rfa','ifc','nwd','nwf','pln',
+  'mpp','xer','gan',
+  'stb','r3d','std','edb','sdb','gwb',
+  'xlsx','csv',
+  'pdf','docx','doc',
+  'shp','kml','kmz','xyz',
+]);
+define('ALLOWED_PLAN_TYPES', ALLOWED_CIVIL_FILE_TYPES);
+define('ALLOWED_RAPPORT_TYPES', ALLOWED_CIVIL_FILE_TYPES);

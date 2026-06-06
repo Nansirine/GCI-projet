@@ -1,5 +1,11 @@
 # 🎨 Guide de Design - GC Projet Manager
 
+> **Dernière mise à jour** : 26 mai 2026  
+> **Version** : 2.0  
+> **Status** : ✅ Design de base complet + Messages de bienvenue + Gestion utilisateurs
+
+---
+
 ## ✅ Ce qui a été fait
 
 ### 1. **Correction des liens vers les assets**
@@ -58,11 +64,45 @@
 
 ### 3. **Pages mises à jour**
 
-✅ **login.php** - Design ultra-moderne avec animations
+✅ **login.php** - Design ultra-moderne avec animations (formulaire compact et responsive)
 ✅ **includes/header.php** - Liens corrigés vers tous les assets
 ✅ **includes/footer.php** - Script Bootstrap local
-✅ **admin/dashboard.php** - Dashboard avec sidebar et statistiques
+✅ **includes/functions.php** - Fonction `getWelcomeMessage()` pour messages personnalisés
+✅ **admin/dashboard.php** - Dashboard avec sidebar, statistiques et message de bienvenue
 ✅ **admin/projets.php** - Liste de projets avec filtres et tableau moderne
+✅ **admin/utilisateurs.php** - Gestion des utilisateurs avec activation/désactivation
+✅ **ingenieur/dashboard.php** - Dashboard avec message de bienvenue personnalisé
+✅ **dessinateur/dashboard.php** - Dashboard avec message de bienvenue personnalisé
+✅ **client/dashboard.php** - Dashboard avec message de bienvenue personnalisé
+
+### 4. **Fonctionnalités ajoutées**
+
+#### **Message de bienvenue personnalisé**
+- Salutation selon l'heure (Bonjour ☀️ / Bon après-midi 🌤️ / Bonsoir 🌙)
+- Messages personnalisés par rôle :
+  - **Admin** : "Bienvenue dans votre espace administrateur"
+  - **Ingénieur** : "Prêt à gérer vos tâches aujourd'hui"
+  - **Dessinateur** : "Vos plans vous attendent"
+  - **Client** : "Suivez l'avancement de vos projets"
+- Affichage du nom complet de l'utilisateur
+- Design moderne avec dégradé bleu et effet de fond animé
+- Responsive sur tous les appareils
+
+#### **Gestion des utilisateurs améliorée**
+- Bouton "Activer/Désactiver" au lieu de supprimer directement
+- Icône pause (⏸️) pour désactiver, play (▶️) pour activer
+- Modal de confirmation avec message personnalisé
+- Protection : impossible de modifier son propre statut
+- Préservation de l'intégrité des données
+
+#### **Formulaire de connexion responsive**
+- Design compact (420px max au lieu de 480px)
+- Responsive parfait sur tous les appareils :
+  - Desktop (>1024px) : Design complet
+  - Tablette (768-1024px) : Adapté
+  - Mobile (576-768px) : Optimisé
+  - Petit mobile (<576px) : Compact avec font-size: 16px
+  - Très petit mobile (<380px) : Minimal
 
 ---
 
@@ -321,20 +361,20 @@ require_once '../includes/header.php';
 ## 🎯 Pages à mettre à jour
 
 ### **Admin**
-- ✅ dashboard.php
+- ✅ dashboard.php (avec message de bienvenue)
 - ✅ projets.php
+- ✅ utilisateurs.php (avec activation/désactivation)
 - ⏳ projet_create.php
 - ⏳ projet_detail.php
 - ⏳ taches.php
 - ⏳ tache_create.php
-- ⏳ utilisateurs.php
 - ⏳ rapports.php
 - ⏳ rapport_detail.php
 - ⏳ statistiques.php
 - ⏳ notifications.php
 
 ### **Ingénieur**
-- ⏳ dashboard.php
+- ✅ dashboard.php (avec message de bienvenue)
 - ⏳ taches.php
 - ⏳ tache_detail.php
 - ⏳ rapports.php
@@ -344,7 +384,7 @@ require_once '../includes/header.php';
 - ⏳ messages.php
 
 ### **Dessinateur**
-- ⏳ dashboard.php
+- ✅ dashboard.php (avec message de bienvenue)
 - ⏳ plans.php
 - ⏳ plan_detail.php
 - ⏳ plan_upload.php
@@ -353,7 +393,7 @@ require_once '../includes/header.php';
 - ⏳ notifications.php
 
 ### **Client**
-- ⏳ dashboard.php
+- ✅ dashboard.php (avec message de bienvenue)
 - ⏳ avancement.php
 - ⏳ planning.php
 - ⏳ plans.php

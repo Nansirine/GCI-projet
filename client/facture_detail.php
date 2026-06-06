@@ -2,9 +2,10 @@
 require_once '../includes/auth.php';
 checkRole(['client']);
 require_once '../config/database.php';
+require_once '../includes/functions.php';
 
 $factureId = isset($_GET['id']) ? (int)$_GET['id'] : 0;
-$stmt = $pdo->prepare("SELECT f.*, p.nom AS projet_nom FROM factures f JOIN projets p ON f.projet_id = p.id WHERE f.id = ? AND f.client_id = ?");
+$stmt = $pdo->prepare("SELECT f.*, p.nom AS projet_nom, p.admin_id FROM factures f JOIN projets p ON f.projet_id = p.id WHERE f.id = ? AND f.client_id = ?");
 $stmt->execute([$factureId, $_SESSION['user_id']]);
 $facture = $stmt->fetch();
 
@@ -27,16 +28,33 @@ $payments = $payments->fetchAll();
 
 // Traitement du formulaire de paiement client
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['montant_client'])) {
+    verifyCSRFToken($_POST['csrf_token'] ?? '');
+    $montantClient = max(0, (float)$_POST['montant_client']);
+    if ($montantClient <= 0) {
+        header('Location: facture_detail.php?id=' . $factureId . '&paiement=montant_invalide');
+        exit();
+    }
+
     $stmt = $pdo->prepare("INSERT INTO paiements (facture_id, client_id, montant, mode_paiement, reference, statut, date_paiement, commentaire) VALUES (?, ?, ?, ?, ?, 'en_attente', ?, ?)");
     $stmt->execute([
         $factureId,
         $_SESSION['user_id'],
-        (float)$_POST['montant_client'],
+        $montantClient,
         $_POST['mode_paiement_client'] ?? 'virement',
         trim($_POST['reference_client'] ?? ''),
         $_POST['date_paiement_client'] ?? date('Y-m-d'),
         trim($_POST['commentaire_client'] ?? ''),
     ]);
+    if (!empty($facture['admin_id'])) {
+        createNotification(
+            $pdo,
+            (int)$facture['admin_id'],
+            'Paiement client soumis',
+            $_SESSION['prenom'] . ' a soumis un paiement pour la facture ' . $facture['numero'] . '.',
+            'info',
+            '/admin/paiements.php'
+        );
+    }
     header('Location: facture_detail.php?id=' . $factureId . '&paiement=ok');
     exit();
 }
@@ -70,6 +88,7 @@ require_once '../includes/layout.php';
                 <div class="section-card">
                     <div class="section-title mb-3">Saisir un paiement</div>
                     <form method="post" class="row g-3">
+                        <input type="hidden" name="csrf_token" value="<?= generateCSRFToken() ?>">
                         <div class="col-md-3"><input type="number" step="0.01" min="1" name="montant_client" class="form-control-modern" placeholder="Montant" required></div>
                         <div class="col-md-3">
                             <select name="mode_paiement_client" class="filter-select">

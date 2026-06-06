@@ -3,6 +3,42 @@ require_once '../includes/auth.php';
 checkRole(['client']);
 $user_id = $_SESSION['user_id'];
 require_once '../config/database.php';
+require_once '../includes/functions.php';
+ensureDocumentDecisionColumns($pdo);
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['plan_id'], $_POST['decision'])) {
+    $planId = (int)$_POST['plan_id'];
+    $decision = $_POST['decision'];
+    $commentaire = sanitize($_POST['commentaire_client'] ?? '');
+
+    if (in_array($decision, ['approuve', 'refuse'], true)) {
+        $stmt = $pdo->prepare('
+            UPDATE plans pl
+            JOIN projets p ON p.id = pl.projet_id
+            SET pl.client_decision = ?, pl.commentaire_client = ?, pl.date_decision_client = NOW()
+            WHERE pl.id = ? AND p.client_id = ? AND pl.partage_client = 1
+        ');
+        $stmt->execute([$decision, $commentaire, $planId, $user_id]);
+
+        $info = $pdo->prepare('
+            SELECT pl.titre, pl.dessinateur_id, p.nom AS projet_nom, p.admin_id
+            FROM plans pl
+            JOIN projets p ON p.id = pl.projet_id
+            WHERE pl.id = ?
+        ');
+        $info->execute([$planId]);
+        if ($plan = $info->fetch()) {
+            $texte = $decision === 'approuve'
+                ? 'Le client a approuve le plan "' . $plan['titre'] . '".'
+                : 'Le client a refuse le plan "' . $plan['titre'] . '"' . ($commentaire ? ' : ' . $commentaire : '.');
+            createNotification($pdo, (int)$plan['admin_id'], 'Decision client sur un plan', $texte, $decision === 'approuve' ? 'succes' : 'avertissement', '/admin/projet_detail.php');
+            createNotification($pdo, (int)$plan['dessinateur_id'], 'Decision client sur un plan', $texte, $decision === 'approuve' ? 'succes' : 'avertissement', '/dessinateur/plans.php');
+        }
+    }
+
+    header('Location: plans.php?decision=1');
+    exit;
+}
 
 $where = ['p.client_id = :client_id', 'pl.partage_client = 1'];
 $params = [':client_id' => $user_id];
@@ -28,6 +64,9 @@ require_once '_client_layout.php';
     <div class="page-header">
         <h1 class="page-title"><i class="bi bi-file-earmark"></i> Plans disponibles</h1>
     </div>
+    <?php if (isset($_GET['decision'])): ?>
+        <div class="alert alert-success">Votre decision a ete enregistree.</div>
+    <?php endif; ?>
 
     <div class="filters-section">
         <form class="filters-row">
@@ -50,19 +89,28 @@ require_once '_client_layout.php';
         <div class="table-wrapper">
             <table class="modern-table">
                 <thead>
-                    <tr><th>Titre</th><th>Type</th><th>Version</th><th>Date de partage</th><th>Actions</th></tr>
+                    <tr><th>Titre</th><th>Type</th><th>Version</th><th>Decision</th><th>Date de partage</th><th>Actions</th></tr>
                 </thead>
                 <tbody>
                     <?php if (!$plans): ?>
-                        <tr><td colspan="5" class="text-center">Aucun plan disponible.</td></tr>
+                        <tr><td colspan="6" class="text-center">Aucun plan disponible.</td></tr>
                     <?php endif; ?>
                     <?php foreach ($plans as $plan): ?>
                         <tr>
                             <td><i class="bi <?= documentIcon($plan['fichier']) ?>"></i> <?= htmlspecialchars($plan['titre']) ?></td>
                             <td><?= htmlspecialchars($typesPlans[$plan['type_plan']] ?? $plan['type_plan']) ?></td>
                             <td>v<?= (int)$plan['version'] ?></td>
+                            <td><?= getBadgeStatut($plan['client_decision'] ?? 'en_attente') ?></td>
                             <td><?= htmlspecialchars(formatDate($plan['date_upload'])) ?></td>
-                            <td><?= renderDocumentActions('plan', (int)$plan['id'], $plan['fichier'], $plan['titre']) ?></td>
+                            <td>
+                                <?= renderClientDocumentActions('plan', (int)$plan['id'], $plan['fichier'], $plan['client_decision'] ?? 'en_attente', $plan['titre']) ?>
+                                <form method="post" class="d-flex flex-wrap gap-1 mt-2">
+                                    <input type="hidden" name="plan_id" value="<?= (int)$plan['id'] ?>">
+                                    <input type="text" name="commentaire_client" class="form-control form-control-sm" placeholder="Commentaire optionnel">
+                                    <button class="btn btn-sm btn-success" name="decision" value="approuve">Approuver</button>
+                                    <button class="btn btn-sm btn-outline-danger" name="decision" value="refuse">Refuser</button>
+                                </form>
+                            </td>
                         </tr>
                     <?php endforeach; ?>
                 </tbody>

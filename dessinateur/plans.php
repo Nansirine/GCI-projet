@@ -1,8 +1,10 @@
 <?php
 require_once '../includes/auth.php';
 checkRole(['dessinateur']);
-$user_id = $_SESSION['user_id'];
+$user_id = (int)$_SESSION['user_id'];
 require_once '../config/database.php';
+require_once '../includes/functions.php';
+ensureDocumentDecisionColumns($pdo);
 
 $where = ['pl.dessinateur_id = :user_id'];
 $params = [':user_id' => $user_id];
@@ -30,35 +32,47 @@ $stmt = $pdo->prepare('
 $stmt->execute($params);
 $plans = $stmt->fetchAll();
 
-$projets = $pdo->prepare("SELECT DISTINCT p.id, p.nom FROM projets p JOIN affectations a ON a.projet_id = p.id WHERE a.utilisateur_id = ? ORDER BY p.nom");
+$projets = $pdo->prepare("
+    SELECT DISTINCT p.id, p.nom
+    FROM projets p
+    JOIN affectations a ON a.projet_id = p.id
+    WHERE a.utilisateur_id = ?
+    ORDER BY p.nom
+");
 $projets->execute([$user_id]);
 $projets = $projets->fetchAll();
 $typesPlans = ['architectural' => 'Architectural', 'structural' => 'Structural', 'electrique' => 'Electrique', 'plomberie' => 'Plomberie', 'autre' => 'Autre'];
+$statuts = ['brouillon', 'soumis', 'valide', 'rejete', 'archive'];
 require_once '../includes/header.php';
 require_once '../includes/layout.php';
 ?>
 <?php renderAppLayoutStart('plans', 'bi-file-earmark', 'Plans'); ?>
 <div class="page-container">
     <div class="d-flex justify-content-between align-items-center mb-3">
-        <h2 class="fw-bold">Mes Plans</h2>
-        <a href="plan_upload.php" class="btn btn-success">+ Déposer un Plan</a>
+        <h2 class="fw-bold">Mes plans</h2>
+        <a href="plan_upload.php" class="btn btn-success">+ Deposer un plan</a>
     </div>
+    <?php if (isset($_GET['created'])): ?>
+        <div class="alert alert-success">Plan depose avec succes.</div>
+    <?php endif; ?>
     <form class="row g-2 mb-3">
         <div class="col-auto">
             <select class="form-select" name="statut">
-                <option value="">Tous</option>
-                <option value="brouillon">Brouillon</option>
-                <option value="soumis">Soumis</option>
-                <option value="valide">Validé</option>
-                <option value="rejete">Rejeté</option>
-                <option value="archive">Archivé</option>
+                <option value="">Tous statuts</option>
+                <?php foreach ($statuts as $statut): ?>
+                    <option value="<?= $statut ?>" <?= ($_GET['statut'] ?? '') === $statut ? 'selected' : '' ?>>
+                        <?= strip_tags(getBadgeStatut($statut)) ?>
+                    </option>
+                <?php endforeach; ?>
             </select>
         </div>
         <div class="col-auto">
             <select class="form-select" name="projet_id">
                 <option value="">Tous projets</option>
                 <?php foreach ($projets as $projet): ?>
-                    <option value="<?= (int)$projet['id'] ?>" <?= (string)($_GET['projet_id'] ?? '') === (string)$projet['id'] ? 'selected' : '' ?>><?= htmlspecialchars($projet['nom']) ?></option>
+                    <option value="<?= (int)$projet['id'] ?>" <?= (string)($_GET['projet_id'] ?? '') === (string)$projet['id'] ? 'selected' : '' ?>>
+                        <?= htmlspecialchars($projet['nom']) ?>
+                    </option>
                 <?php endforeach; ?>
             </select>
         </div>
@@ -66,7 +80,7 @@ require_once '../includes/layout.php';
             <select class="form-select" name="type_plan">
                 <option value="">Tous types</option>
                 <?php foreach ($typesPlans as $value => $label): ?>
-                    <option value="<?= $value ?>" <?= ($_GET['type_plan'] ?? '') === $value ? 'selected' : '' ?>><?= $label ?></option>
+                    <option value="<?= $value ?>" <?= ($_GET['type_plan'] ?? '') === $value ? 'selected' : '' ?>><?= htmlspecialchars($label) ?></option>
                 <?php endforeach; ?>
             </select>
         </div>
@@ -77,7 +91,7 @@ require_once '../includes/layout.php';
     <div class="table-responsive">
         <table class="table table-hover align-middle">
             <thead class="table-light">
-                <tr><th>Projet</th><th>Titre</th><th>Type</th><th>Version</th><th>Statut</th><th>Partagé Client</th><th>Date</th><th>Actions</th></tr>
+                <tr><th>Projet</th><th>Titre</th><th>Type</th><th>Version</th><th>Statut</th><th>Partage client</th><th>Date</th><th>Actions</th></tr>
             </thead>
             <tbody>
                 <?php if (!$plans): ?>
@@ -90,7 +104,10 @@ require_once '../includes/layout.php';
                         <td><?= htmlspecialchars($typesPlans[$plan['type_plan']] ?? $plan['type_plan']) ?></td>
                         <td>v<?= (int)$plan['version'] ?></td>
                         <td><?= getBadgeStatut($plan['statut']) ?></td>
-                        <td><?= (int)$plan['partage_client'] === 1 ? '<span class="badge bg-success">Oui</span>' : '<span class="badge bg-secondary">Non</span>' ?></td>
+                        <td>
+                            <?= (int)$plan['partage_client'] === 1 ? '<span class="badge bg-success">Visible</span>' : '<span class="badge bg-secondary">Non visible</span>' ?>
+                            <?= getBadgeStatut($plan['client_decision'] ?? 'en_attente') ?>
+                        </td>
                         <td><?= htmlspecialchars(formatDate($plan['date_upload'])) ?></td>
                         <td>
                             <?= renderDocumentActions('plan', (int)$plan['id'], $plan['fichier'], $plan['titre']) ?>

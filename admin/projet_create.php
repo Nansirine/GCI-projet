@@ -7,6 +7,7 @@ require_once '../includes/functions.php';
 
 $message = '';
 $messageType = '';
+$old = $_POST;
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $nom = sanitize($_POST['nom'] ?? '');
@@ -90,7 +91,8 @@ require_once '../includes/header.php';
                 <li class="nav-item"><a href="dashboard.php" class="nav-link"><i class="bi bi-house-door"></i> <span>Tableau de bord</span></a></li>
                 <li class="nav-item"><a href="projets.php" class="nav-link"><i class="bi bi-folder2"></i> <span>Projets</span></a></li>
                 <li class="nav-item"><a href="taches.php" class="nav-link"><i class="bi bi-list-task"></i> <span>Tâches</span></a></li>
-                <li class="nav-item"><a href="utilisateurs.php" class="nav-link"><i class="bi bi-people"></i> <span>Utilisateurs</span></a></li>
+                <li class="nav-item"><a href="alertes.php" class="nav-link"><i class="bi bi-exclamation-triangle"></i> <span>Alertes</span></a></li>
+                <li class="nav-item"><a href="utilisateurs.php" class="nav-link"><i class="bi bi-person-gear"></i> <span>Administrateur</span></a></li>
                 <li class="nav-item"><a href="rapports.php" class="nav-link"><i class="bi bi-file-earmark-text"></i> <span>Rapports</span></a></li>
                 <li class="nav-item"><a href="statistiques.php" class="nav-link"><i class="bi bi-bar-chart"></i> <span>Statistiques</span></a></li>
                 <li class="nav-item"><a href="notifications.php" class="nav-link"><i class="bi bi-bell"></i> <span>Notifications</span></a></li>
@@ -127,42 +129,42 @@ require_once '../includes/header.php';
                     <form method="post" class="row g-3">
                     <div class="col-md-6">
                         <label class="form-label-modern">Nom du projet *</label>
-                        <input type="text" class="form-control-modern" name="nom" required>
+                        <input type="text" class="form-control-modern" name="nom" value="<?= htmlspecialchars($old['nom'] ?? '') ?>" required>
                     </div>
                     <div class="col-md-6">
                         <label class="form-label-modern">Client *</label>
                         <select class="filter-select" name="client_id" required>
                             <option value="">Selectionner un client</option>
                             <?php foreach ($clients as $client): ?>
-                                <option value="<?= (int)$client['id'] ?>"><?= htmlspecialchars($client['prenom'] . ' ' . $client['nom'] . ' - ' . $client['email']) ?></option>
+                                <option value="<?= (int)$client['id'] ?>" <?= (string)($old['client_id'] ?? '') === (string)$client['id'] ? 'selected' : '' ?>><?= htmlspecialchars($client['prenom'] . ' ' . $client['nom'] . ' - ' . $client['email']) ?></option>
                             <?php endforeach; ?>
                         </select>
                     </div>
                     <div class="col-md-12">
                         <label class="form-label-modern">Description *</label>
-                        <textarea class="form-control-modern" name="description" rows="2" required></textarea>
+                        <textarea class="form-control-modern" name="description" rows="2" required><?= htmlspecialchars($old['description'] ?? '') ?></textarea>
                     </div>
                     <div class="col-md-6">
                         <label class="form-label-modern">Localisation *</label>
-                        <input type="text" class="form-control-modern" name="localisation" required>
+                        <input type="text" class="form-control-modern" name="localisation" value="<?= htmlspecialchars($old['localisation'] ?? '') ?>" required>
                     </div>
                     <div class="col-md-6">
                         <label class="form-label-modern">Budget (FCFA) *</label>
-                        <input type="number" class="form-control-modern" name="budget" required>
+                        <input type="number" class="form-control-modern" name="budget" value="<?= htmlspecialchars($old['budget'] ?? '') ?>" required>
                     </div>
                     <div class="col-md-6">
                         <label class="form-label-modern">Date début *</label>
-                        <input type="date" class="form-control-modern" name="date_debut" required>
+                        <input type="date" class="form-control-modern" name="date_debut" value="<?= htmlspecialchars($old['date_debut'] ?? '') ?>" required>
                     </div>
                     <div class="col-md-6">
                         <label class="form-label-modern">Date fin prévue *</label>
-                        <input type="date" class="form-control-modern" name="date_fin_prevue" required>
+                        <input type="date" class="form-control-modern" name="date_fin_prevue" value="<?= htmlspecialchars($old['date_fin_prevue'] ?? '') ?>" required>
                     </div>
                     <div class="col-md-6">
                         <label class="form-label-modern">Ingénieurs affectés</label>
                         <select class="filter-select" name="ingenieurs[]" multiple>
                             <?php foreach ($ingenieurs as $ingenieur): ?>
-                                <option value="<?= (int)$ingenieur['id'] ?>"><?= htmlspecialchars($ingenieur['prenom'] . ' ' . $ingenieur['nom'] . ' - ' . $ingenieur['email']) ?></option>
+                                <option value="<?= (int)$ingenieur['id'] ?>" <?= in_array((string)$ingenieur['id'], array_map('strval', $old['ingenieurs'] ?? []), true) ? 'selected' : '' ?>><?= htmlspecialchars($ingenieur['prenom'] . ' ' . $ingenieur['nom'] . ' - ' . $ingenieur['email']) ?></option>
                             <?php endforeach; ?>
                         </select>
                     </div>
@@ -170,7 +172,7 @@ require_once '../includes/header.php';
                         <label class="form-label-modern">Dessinateurs affectés</label>
                         <select class="filter-select" name="dessinateurs[]" multiple>
                             <?php foreach ($dessinateurs as $dessinateur): ?>
-                                <option value="<?= (int)$dessinateur['id'] ?>"><?= htmlspecialchars($dessinateur['prenom'] . ' ' . $dessinateur['nom'] . ' - ' . $dessinateur['email']) ?></option>
+                                <option value="<?= (int)$dessinateur['id'] ?>" <?= in_array((string)$dessinateur['id'], array_map('strval', $old['dessinateurs'] ?? []), true) ? 'selected' : '' ?>><?= htmlspecialchars($dessinateur['prenom'] . ' ' . $dessinateur['nom'] . ' - ' . $dessinateur['email']) ?></option>
                             <?php endforeach; ?>
                         </select>
                     </div>

@@ -3,44 +3,25 @@ use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
 
 require __DIR__ . '/../vendor/autoload.php';
-
-// Choisis ton service SMTP :
-// 1. Pour Gmail, décommente la section Gmail et renseigne tes infos
-// 2. Pour Mailtrap, décommente la section Mailtrap et renseigne tes infos
-// 3. Pour Outlook, décommente la section Outlook et renseigne tes infos
+require_once __DIR__ . '/../config/config.php';
 
 function sendMailSMTP($to, $subject, $body, $toName = "") {
     $mail = new PHPMailer(true);
     try {
+        if (!defined('SMTP_HOST') || SMTP_HOST === '' || SMTP_USERNAME === '' || SMTP_PASSWORD === '') {
+            error_log('Mailer Error: configuration SMTP incomplete.');
+            return false;
+        }
+
         $mail->isSMTP();
         $mail->SMTPAuth = true;
         $mail->CharSet = 'UTF-8';
-
-        // --- GMAIL ---
-        // $mail->Host = 'smtp.gmail.com';
-        // $mail->Username = 'ton.email@gmail.com';
-        // $mail->Password = 'mot_de_passe_application'; // Utilise un mot de passe d'application Gmail
-        // $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
-        // $mail->Port = 587;
-        // $mail->setFrom('ton.email@gmail.com', 'GC Manager');
-
-        // --- MAILTRAP ---
-        // $mail->Host = 'sandbox.smtp.mailtrap.io';
-        // $mail->Username = 'MAILTRAP_USERNAME';
-        // $mail->Password = 'MAILTRAP_PASSWORD';
-        // $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
-        // $mail->Port = 587;
-        // $mail->setFrom('no-reply@gcmanager.local', 'GC Manager');
-
-        // --- OUTLOOK ---
-        // $mail->Host = 'smtp.office365.com';
-        // $mail->Username = 'ton.email@outlook.com';
-        // $mail->Password = 'ton_mot_de_passe';
-        // $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
-        // $mail->Port = 587;
-        // $mail->setFrom('ton.email@outlook.com', 'GC Manager');
-
-        // --- FIN CONFIG ---
+        $mail->Host = SMTP_HOST;
+        $mail->Username = SMTP_USERNAME;
+        $mail->Password = SMTP_PASSWORD;
+        $mail->SMTPSecure = SMTP_SECURE;
+        $mail->Port = SMTP_PORT;
+        $mail->setFrom(SMTP_FROM_EMAIL, SMTP_FROM_NAME);
 
         $mail->addAddress($to, $toName);
         $mail->isHTML(true);

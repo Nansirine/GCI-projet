@@ -1,6 +1,8 @@
 <?php
 require_once __DIR__.'/includes/auth.php';
 require_once __DIR__.'/config/database.php';
+require_once __DIR__.'/includes/functions.php';
+ensureUserAccountColumns($pdo);
 
 $token = $_GET['token'] ?? '';
 $message = '';

@@ -53,7 +53,8 @@ require_once '../includes/header.php';
                 <li class="nav-item"><a href="projets.php" class="nav-link"><i class="bi bi-folder2"></i><span>Projets</span></a></li>
                 <li class="nav-item"><a href="factures.php" class="nav-link active"><i class="bi bi-receipt"></i><span>Factures</span></a></li>
                 <li class="nav-item"><a href="paiements.php" class="nav-link"><i class="bi bi-credit-card"></i><span>Paiements</span></a></li>
-                <li class="nav-item"><a href="utilisateurs.php" class="nav-link"><i class="bi bi-people"></i><span>Utilisateurs</span></a></li>
+                <li class="nav-item"><a href="alertes.php" class="nav-link"><i class="bi bi-exclamation-triangle"></i><span>Alertes</span></a></li>
+                <li class="nav-item"><a href="utilisateurs.php" class="nav-link"><i class="bi bi-person-gear"></i><span>Administrateur</span></a></li>
             </ul>
         </nav>
         <div class="sidebar-footer"><a href="/gestion_projet/logout.php" class="sidebar-logout"><i class="bi bi-box-arrow-right"></i><span>Deconnexion</span></a></div>
@@ -147,4 +148,3 @@ document.querySelectorAll('.btn-delete-invoice').forEach(btn => btn.addEventList
 }));
 </script>
 <?php require_once '../includes/footer.php'; ?>
-

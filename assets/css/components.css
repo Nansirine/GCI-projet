@@ -546,6 +546,143 @@
     transform: scale(1.1);
 }
 
+/* Message de bienvenue */
+.welcome-banner {
+    background: #fff;
+    border-radius: 10px;
+    padding: 1.15rem 1.35rem;
+    color: #0f172a;
+    margin-bottom: 1.4rem;
+    position: relative;
+    overflow: hidden;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
+}
+
+.welcome-banner::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 100%;
+    background: #2563eb;
+}
+
+.welcome-banner-content {
+    position: relative;
+    z-index: 1;
+}
+
+.welcome-salutation {
+    font-size: 0.82rem;
+    font-weight: 500;
+    color: #64748b;
+    margin-bottom: 0.35rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.welcome-name {
+    font-size: 1.35rem;
+    font-weight: 800;
+    margin-bottom: 0.35rem;
+    line-height: 1.2;
+}
+
+.welcome-message {
+    font-size: 0.9rem;
+    color: #475569;
+    font-weight: 500;
+}
+
+.welcome-emoji {
+    font-size: 1rem;
+}
+
+.welcome-emoji:empty {
+    display: none;
+}
+
+.role-interface-banner {
+    position: fixed;
+    right: 1rem;
+    bottom: 1rem;
+    z-index: 1300;
+    max-width: 360px;
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+    padding: 0.75rem 0.9rem;
+    border-radius: 8px;
+    background: #fff;
+    color: #0f172a;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 12px 32px rgba(15, 23, 42, 0.16);
+    font-size: 0.78rem;
+}
+
+.role-interface-banner strong {
+    font-size: 0.82rem;
+}
+
+.role-interface-banner span {
+    color: #64748b;
+}
+
+.role-interface-admin {
+    border-left: 4px solid #2563eb;
+}
+
+.role-interface-ingenieur {
+    border-left: 4px solid #059669;
+}
+
+.role-interface-dessinateur {
+    border-left: 4px solid #7c3aed;
+}
+
+.role-interface-client {
+    border-left: 4px solid #f59e0b;
+}
+
+.btn-action-disabled,
+.btn-action-disabled:hover {
+    opacity: 0.45;
+    cursor: not-allowed;
+    background: #f1f5f9;
+    color: #64748b;
+    transform: none;
+}
+
+.navbar-breadcrumb img[alt="Logo Buildflow"] {
+    display: none !important;
+}
+
+.sidebar-brand {
+    gap: 0.5rem;
+}
+
+/* Responsive welcome banner */
+@media (max-width: 768px) {
+    .welcome-banner {
+        padding: 1.5rem;
+    }
+    
+    .welcome-name {
+        font-size: 1.5rem;
+    }
+    
+    .welcome-salutation {
+        font-size: 0.9rem;
+    }
+    
+    .welcome-message {
+        font-size: 0.875rem;
+    }
+}
+
 /* Notifications dropdown */
 .notifications-dropdown {
     position: absolute;

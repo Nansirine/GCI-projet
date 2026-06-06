@@ -2,8 +2,13 @@
 <?php
 require_once '../includes/auth.php';
 checkRole(['client']);
+require_once '../includes/functions.php';
+
 $user_id = $_SESSION['user_id'];
-$prenom = $_SESSION['prenom'] ?? '';
+
+// Message de bienvenue personnalisé
+$welcome = getWelcomeMessage($_SESSION['prenom'] ?? 'Client', $_SESSION['nom'] ?? '', 'client');
+
 require_once '../includes/header.php';
 ?>
 <link rel="stylesheet" href="/gestion_projet/assets/css/app.css">
@@ -15,7 +20,7 @@ require_once '../includes/header.php';
         <div class="sidebar-header">
             <a href="dashboard.php" class="sidebar-brand">
                 <div class="sidebar-logo"><i class="bi bi-person"></i></div>
-                <span class="sidebar-title">GC Client</span>
+                <span class="sidebar-title">Buildflow</span>
             </a>
         </div>
         <nav class="sidebar-nav">
@@ -49,8 +54,20 @@ require_once '../includes/header.php';
         </nav>
         <!-- Content Area -->
         <div class="content-area">
+            <!-- Message de bienvenue -->
+            <div class="welcome-banner">
+                <div class="welcome-banner-content">
+                    <div class="welcome-salutation">
+                        <span class="welcome-emoji"><?= $welcome['emoji'] ?></span>
+                        <span><?= $welcome['salutation'] ?></span>
+                    </div>
+                    <div class="welcome-name"><?= htmlspecialchars($welcome['nom_complet']) ?></div>
+                    <div class="welcome-message"><?= $welcome['message'] ?></div>
+                </div>
+            </div>
+            
             <div class="page-header">
-                <h1 class="page-title">Bonjour <?= htmlspecialchars($prenom) ?>, voici l'état de votre projet</h1>
+                <h1 class="page-title">Tableau de bord client</h1>
             </div>
             <div class="section-card mb-4">
                 <div class="row align-items-center">
@@ -100,7 +117,7 @@ require_once '../includes/header.php';
                 </div>
                 <div class="col-md-6 d-flex flex-column gap-3 align-items-end">
                     <a href="avancement.php" class="btn-modern btn-primary-modern w-100"><i class="bi bi-graph-up"></i> Voir Avancement</a>
-                    <a href="rapports.php" class="btn-modern btn-outline-modern w-100"><i class="bi bi-file-earmark-text"></i> Mes Rapports</a>
+                    <!-- <a href="rapports.php" class="btn-modern btn-outline-modern w-100"><i class="bi bi-file-earmark-text"></i> Mes Rapports</a> -->
                     <a href="factures.php" class="btn-modern btn-outline-modern w-100"><i class="bi bi-receipt"></i> Mes Factures</a>
                     <a href="demandes.php" class="btn-modern btn-success-modern w-100"><i class="bi bi-chat"></i> Faire une Demande</a>
                 </div>
@@ -113,5 +130,4 @@ document.getElementById('menuToggle')?.addEventListener('click', function() {
     document.getElementById('sidebar').classList.toggle('open');
 });
 </script>
-<script src="/gestion_projet/assets/js/app.js"></script>
 <?php require_once '../includes/footer.php'; ?>

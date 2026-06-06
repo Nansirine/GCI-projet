@@ -6,6 +6,8 @@ require_once '../includes/auth.php';
 checkRole(['admin']);
 require_once '../config/database.php';
 require_once '../includes/mailer.php';
+require_once '../includes/functions.php';
+ensureUserAccountColumns($pdo);
 
 $roles = ['admin', 'ingenieur', 'dessinateur', 'client'];
 $roleLabels = [
@@ -37,24 +39,25 @@ if (isset($_POST['new_nom'], $_POST['new_prenom'], $_POST['new_email'], $_POST['
         $erreur_creation = 'Role invalide.';
     } else {
         try {
-            // Générer un token d'activation
             $activation_token = bin2hex(random_bytes(32));
-            // Statut inactif à la création
             $stmt = $pdo->prepare('INSERT INTO utilisateurs (nom, prenom, email, mot_de_passe, role, statut, telephone, activation_token) VALUES (?, ?, ?, ?, ?, ?, ?, ?)');
-            // Mot de passe temporaire aléatoire
             $temp_password = bin2hex(random_bytes(4));
             $stmt->execute([
                 $nom, $prenom, $email, password_hash($temp_password, PASSWORD_DEFAULT), $role, 'inactif', $telephone, $activation_token
             ]);
 
 
-            // Envoi de l'email d'activation via PHPMailer
-            $activation_link = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http') . '://' . $_SERVER['HTTP_HOST'] . dirname($_SERVER['REQUEST_URI']) . '/../activation.php?token=' . $activation_token;
-            $subject = 'Activation de votre compte GC Manager';
-            $message_mail = "Bonjour $prenom $nom,<br><br>Un compte vient d'être créé pour vous sur la plateforme GC Manager.<br>Pour activer votre compte et définir votre mot de passe, cliquez sur le lien suivant :<br><a href='$activation_link'>$activation_link</a><br><br>Si vous n'êtes pas à l'origine de cette demande, ignorez cet email.";
-            sendMailSMTP($email, $subject, $message_mail, "$prenom $nom");
+            $activation_link = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http') . '://' . $_SERVER['HTTP_HOST'] . '/gestion_projet/activation.php?token=' . $activation_token;
+            $subject = 'Activation de votre compte Buildflow';
+            $roleLabel = $roleLabels[$role] ?? ucfirst($role);
+            $message_mail = "Bonjour " . htmlspecialchars($prenom . ' ' . $nom) . ",<br><br>"
+                . "Votre compte Buildflow vient d'etre cree avec le role <strong>" . htmlspecialchars($roleLabel) . "</strong>.<br>"
+                . "Cliquez sur ce lien pour activer votre compte et definir votre mot de passe :<br>"
+                . "<a href='" . htmlspecialchars($activation_link) . "'>" . htmlspecialchars($activation_link) . "</a><br><br>"
+                . "Apres activation, vous pourrez vous connecter a votre interface.";
+            $mailSent = sendMailSMTP($email, $subject, $message_mail, "$prenom $nom");
 
-            header('Location: utilisateurs.php?created=1');
+            header('Location: utilisateurs.php?created=1' . ($mailSent ? '' : '&mail=0'));
             exit();
         } catch (PDOException $e) {
             $erreur_creation = $e->getCode() == 23000 ? 'Cet email existe deja.' : 'Erreur lors de la creation : ' . $e->getMessage();
@@ -134,6 +137,24 @@ if (isset($_POST['delete_id']) && is_numeric($_POST['delete_id'])) {
     }
 }
 
+if (isset($_POST['toggle_status_id']) && is_numeric($_POST['toggle_status_id'])) {
+    $id = (int)$_POST['toggle_status_id'];
+    $newStatut = $_POST['new_statut'] ?? '';
+    
+    if ($id !== (int)$_SESSION['user_id'] && in_array($newStatut, ['actif', 'inactif'], true)) {
+        try {
+            $stmt = $pdo->prepare('UPDATE utilisateurs SET statut = ? WHERE id = ?');
+            $stmt->execute([$newStatut, $id]);
+            header('Location: utilisateurs.php?status_changed=1');
+            exit();
+        } catch (PDOException $e) {
+            $message = 'Erreur lors du changement de statut : ' . $e->getMessage();
+        }
+    } else {
+        $message = 'Operation non autorisee.';
+    }
+}
+
 $where = [];
 $params = [];
 
@@ -181,7 +202,8 @@ require_once '../includes/header.php';
                 <li class="nav-item"><a href="factures.php" class="nav-link"><i class="bi bi-receipt"></i><span>Factures</span></a></li>
                 <li class="nav-item"><a href="paiements.php" class="nav-link"><i class="bi bi-credit-card"></i><span>Paiements</span></a></li>
                 <li class="nav-item"><a href="taches.php" class="nav-link"><i class="bi bi-list-task"></i><span>Taches</span></a></li>
-                <li class="nav-item"><a href="utilisateurs.php" class="nav-link active"><i class="bi bi-people"></i><span>Utilisateurs</span></a></li>
+                <li class="nav-item"><a href="alertes.php" class="nav-link"><i class="bi bi-exclamation-triangle"></i><span>Alertes</span></a></li>
+                <li class="nav-item"><a href="utilisateurs.php" class="nav-link active"><i class="bi bi-person-gear"></i><span>Administrateur</span></a></li>
                 <li class="nav-item"><a href="rapports.php" class="nav-link"><i class="bi bi-file-earmark-text"></i><span>Rapports</span></a></li>
                 <li class="nav-item"><a href="statistiques.php" class="nav-link"><i class="bi bi-bar-chart"></i><span>Statistiques</span></a></li>
                 <li class="nav-item"><a href="notifications.php" class="nav-link"><i class="bi bi-bell"></i><span>Notifications</span></a></li>
@@ -196,7 +218,7 @@ require_once '../includes/header.php';
         <nav class="top-navbar">
             <div class="navbar-left">
                 <i class="bi bi-list menu-toggle" id="menuToggle"></i>
-                <div class="navbar-breadcrumb"><i class="bi bi-people"></i><span>Utilisateurs</span></div>
+                <div class="navbar-breadcrumb"><i class="bi bi-person-gear"></i><span>Administrateur</span></div>
             </div>
             <div class="navbar-right">
                 <form class="navbar-search" method="get" action=""><i class="bi bi-search"></i><input type="text" name="search" placeholder="Rechercher..."></form>
@@ -207,7 +229,10 @@ require_once '../includes/header.php';
 
         <div class="content-area">
             <div class="page-header">
-                <h1 class="page-title"><i class="bi bi-people"></i> Gestion des utilisateurs</h1>
+                <div>
+                    <h1 class="page-title"><i class="bi bi-person-gear"></i> Administrateur</h1>
+                    <p class="page-subtitle">Gestion des utilisateurs, activation des comptes et parametrage manuel de la base de donnees.</p>
+                </div>
                 <div class="page-actions">
                     <button type="button" class="btn-modern btn-success-modern" data-bs-toggle="modal" data-bs-target="#modalUser">
                         <i class="bi bi-plus-circle"></i> Nouvel utilisateur
@@ -217,9 +242,43 @@ require_once '../includes/header.php';
 
             <?php if ($erreur_creation || $message): ?>
                 <div class="alert alert-danger"><?= htmlspecialchars($erreur_creation ?: $message) ?></div>
-            <?php elseif (isset($_GET['created']) || isset($_GET['updated']) || isset($_GET['deleted'])): ?>
-                <div class="alert alert-success">Operation effectuee avec succes.</div>
+            <?php elseif (isset($_GET['created']) || isset($_GET['updated']) || isset($_GET['deleted']) || isset($_GET['status_changed'])): ?>
+                <div class="alert alert-success">
+                    Operation effectuee avec succes.
+                    <?php if (isset($_GET['mail'])): ?>
+                        <br><strong>Attention :</strong> le compte est cree, mais l'email n'a pas pu etre envoye. Verifiez la configuration SMTP.
+                    <?php endif; ?>
+                </div>
             <?php endif; ?>
+
+            <div class="section-card mb-3">
+                <div class="section-header">
+                    <div class="section-title"><i class="bi bi-database-gear"></i> Parametrage manuel</div>
+                </div>
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <div class="card-modern p-3 h-100">
+                            <div class="text-muted small">Base de donnees</div>
+                            <strong><?= htmlspecialchars(DB_NAME) ?></strong>
+                            <div class="text-muted small mt-1">Serveur: <?= htmlspecialchars(DB_HOST) ?></div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card-modern p-3 h-100">
+                            <div class="text-muted small">Utilisateurs actifs</div>
+                            <strong><?= count(array_filter($utilisateurs, fn($u) => $u['statut'] === 'actif')) ?></strong>
+                            <div class="text-muted small mt-1">Desactivation possible depuis les actions.</div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card-modern p-3 h-100">
+                            <div class="text-muted small">Parametres email</div>
+                            <strong><?= defined('SMTP_HOST') && SMTP_HOST ? htmlspecialchars(SMTP_HOST) : 'SMTP non configure' ?></strong>
+                            <div class="text-muted small mt-1">A renseigner dans config/config.php.</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
             <div class="filters-section">
                 <form class="filters-row" method="get">
@@ -290,9 +349,14 @@ require_once '../includes/header.php';
                                             <button type="button" class="btn-action btn-action-edit btn-edit-user" title="Modifier" data-bs-toggle="modal" data-bs-target="#editUserModal" data-user='<?= htmlspecialchars(json_encode($user), ENT_QUOTES, 'UTF-8') ?>'>
                                                 <i class="bi bi-pencil"></i>
                                             </button>
-                                            <button type="button" class="btn-action btn-action-delete btn-delete-user" title="Supprimer" data-bs-toggle="modal" data-bs-target="#deleteUserModal" data-id="<?= (int)$user['id'] ?>" data-name="<?= htmlspecialchars($user['prenom'] . ' ' . $user['nom'], ENT_QUOTES) ?>" <?= (int)$user['id'] === (int)$_SESSION['user_id'] ? 'disabled' : '' ?>>
-                                                <i class="bi bi-trash"></i>
-                                            </button>
+                                            <?php if ((int)$user['id'] !== (int)$_SESSION['user_id']): ?>
+                                                <button type="button" class="btn-action <?= $user['statut'] === 'actif' ? 'btn-action-warning' : 'btn-action-view' ?> btn-toggle-status" title="<?= $user['statut'] === 'actif' ? 'Désactiver' : 'Activer' ?>" data-bs-toggle="modal" data-bs-target="#toggleStatusModal" data-id="<?= (int)$user['id'] ?>" data-name="<?= htmlspecialchars($user['prenom'] . ' ' . $user['nom'], ENT_QUOTES) ?>" data-statut="<?= $user['statut'] ?>">
+                                                    <i class="bi <?= $user['statut'] === 'actif' ? 'bi-pause-circle' : 'bi-play-circle' ?>"></i>
+                                                </button>
+                                                <button type="button" class="btn-action btn-action-delete btn-delete-user" title="Supprimer" data-bs-toggle="modal" data-bs-target="#deleteUserModal" data-id="<?= (int)$user['id'] ?>" data-name="<?= htmlspecialchars($user['prenom'] . ' ' . $user['nom'], ENT_QUOTES) ?>">
+                                                    <i class="bi bi-trash"></i>
+                                                </button>
+                                            <?php endif; ?>
                                         </div>
                                     </td>
                                 </tr>
@@ -326,7 +390,9 @@ require_once '../includes/header.php';
                             <?php endforeach; ?>
                         </select>
                     </div>
-                    <div class="col-12"><input type="password" class="form-control-modern" name="new_password" placeholder="Mot de passe temporaire" required></div>
+                    <div class="col-12">
+                        <div class="alert alert-info mb-0">L'utilisateur recevra un email pour activer son compte et definir lui-meme son mot de passe.</div>
+                    </div>
                 </div>
             </div>
             <div class="modal-footer">
@@ -396,6 +462,26 @@ require_once '../includes/header.php';
     </div>
 </div>
 
+<div class="modal fade modal-modern" id="toggleStatusModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <form class="modal-content" method="post">
+            <input type="hidden" name="toggle_status_id" id="toggle_status_id">
+            <input type="hidden" name="new_statut" id="new_statut">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-info-circle text-primary"></i> Changer le statut</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-0" id="toggle_status_message"></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-modern btn-outline-modern" data-bs-dismiss="modal">Annuler</button>
+                <button type="submit" class="btn-modern btn-primary-modern" id="toggle_status_btn">Confirmer</button>
+            </div>
+        </form>
+    </div>
+</div>
+
 <script>
 document.getElementById('menuToggle')?.addEventListener('click', function() {
     document.getElementById('sidebar').classList.toggle('open');
@@ -423,6 +509,22 @@ document.querySelectorAll('.btn-delete-user').forEach(function(btn) {
     });
 });
 
+document.querySelectorAll('.btn-toggle-status').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+        const id = this.dataset.id;
+        const name = this.dataset.name;
+        const currentStatut = this.dataset.statut;
+        const newStatut = currentStatut === 'actif' ? 'inactif' : 'actif';
+        const action = newStatut === 'inactif' ? 'désactiver' : 'activer';
+        
+        document.getElementById('toggle_status_id').value = id;
+        document.getElementById('new_statut').value = newStatut;
+        document.getElementById('toggle_status_message').innerHTML = 
+            'Voulez-vous <strong>' + action + '</strong> le compte de <strong>' + name + '</strong> ?';
+        document.getElementById('toggle_status_btn').textContent = action.charAt(0).toUpperCase() + action.slice(1);
+    });
+});
+
 document.getElementById('editUserForm')?.addEventListener('submit', function(e) {
     e.preventDefault();
     const msg = document.getElementById('editUserMsg');
@@ -445,5 +547,3 @@ document.getElementById('editUserForm')?.addEventListener('submit', function(e) 
 </script>
 
 <?php require_once '../includes/footer.php'; ?>
-
-

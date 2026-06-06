@@ -4,6 +4,7 @@ require_once __DIR__ . '/config/database.php';
 require_once __DIR__ . '/includes/functions.php';
 
 checkAuth();
+ensureDocumentDecisionColumns($pdo);
 
 $type = $_GET['type'] ?? '';
 $id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
@@ -37,6 +38,10 @@ if ($type === 'plan') {
             || ((int)$document['dessinateur_id'] === $userId)
             || ($role === 'ingenieur' && userBelongsToProject($pdo, $userId, (int)$document['projet_id']))
             || ($role === 'client' && (int)$document['client_id'] === $userId && (int)$document['partage_client'] === 1);
+        if ($allowed && $role === 'client' && $download && ($document['client_decision'] ?? 'en_attente') !== 'approuve') {
+            http_response_code(403);
+            exit('Vous devez approuver ce fichier avant de le telecharger.');
+        }
     }
 }
 
@@ -56,6 +61,10 @@ if ($type === 'rapport') {
             || ((int)$document['ingenieur_id'] === $userId)
             || ($role === 'ingenieur' && userBelongsToProject($pdo, $userId, (int)$document['projet_id']))
             || ($role === 'client' && (int)$document['client_id'] === $userId && $document['statut'] === 'valide');
+        if ($allowed && $role === 'client' && $download && ($document['client_decision'] ?? 'en_attente') !== 'approuve') {
+            http_response_code(403);
+            exit('Vous devez approuver ce fichier avant de le telecharger.');
+        }
     }
 }
 

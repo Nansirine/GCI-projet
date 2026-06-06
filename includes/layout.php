@@ -26,8 +26,10 @@ function getRoleLayoutConfig(string $role): array
                 'factures' => ['factures.php', 'bi-receipt', 'Factures'],
                 'paiements' => ['paiements.php', 'bi-credit-card', 'Paiements'],
                 'taches' => ['taches.php', 'bi-list-task', 'Taches'],
-                'utilisateurs' => ['utilisateurs.php', 'bi-people', 'Utilisateurs'],
+                'alertes' => ['alertes.php', 'bi-exclamation-triangle', 'Alertes'],
+                'utilisateurs' => ['utilisateurs.php', 'bi-person-gear', 'Administrateur'],
                 'rapports' => ['rapports.php', 'bi-file-earmark-text', 'Rapports'],
+                'messages' => ['messages.php', 'bi-chat', 'Messages'],
                 'statistiques' => ['statistiques.php', 'bi-bar-chart', 'Statistiques'],
                 'notifications' => ['notifications.php', 'bi-bell', 'Notifications'],
             ],
@@ -35,7 +37,7 @@ function getRoleLayoutConfig(string $role): array
         'ingenieur' => [
             'title' => 'Buildflow',
             'logo' => 'bi-gear',
-            'notification' => 'alertes.php',
+            'notification' => 'notifications.php',
             'items' => [
                 'dashboard' => ['dashboard.php', 'bi-house-door', 'Tableau de bord'],
                 'taches' => ['taches.php', 'bi-list-task', 'Mes taches'],
@@ -43,6 +45,7 @@ function getRoleLayoutConfig(string $role): array
                 'alertes' => ['alertes.php', 'bi-exclamation-triangle', 'Alertes'],
                 'documents' => ['documents.php', 'bi-folder2', 'Documents'],
                 'messages' => ['messages.php', 'bi-chat', 'Messages'],
+                'notifications' => ['notifications.php', 'bi-bell', 'Notifications'],
             ],
         ],
         'dessinateur' => [

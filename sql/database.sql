@@ -9,6 +9,9 @@ CREATE TABLE utilisateurs (
 	telephone VARCHAR(20),
 	photo VARCHAR(255),
 	statut ENUM('actif','inactif') DEFAULT 'actif',
+	activation_token VARCHAR(128) NULL,
+	reset_token VARCHAR(128) NULL,
+	reset_token_expires DATETIME NULL,
 	date_creation TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 	derniere_connexion TIMESTAMP NULL
 );
@@ -51,6 +54,7 @@ CREATE TABLE taches (
 	description TEXT,
 	assigne_a INT NOT NULL,
 	cree_par INT NOT NULL,
+	dependance_id INT NULL,
 	priorite ENUM('basse','moyenne','haute','urgente') DEFAULT 'moyenne',
 	statut ENUM('a_faire','en_cours','en_revision','termine','bloque') DEFAULT 'a_faire',
 	pourcentage INT DEFAULT 0,
@@ -74,6 +78,9 @@ CREATE TABLE rapports (
 	fichier_joint VARCHAR(255) NULL,
 	statut ENUM('soumis','valide','rejete') DEFAULT 'soumis',
 	commentaire_admin TEXT NULL,
+	client_decision ENUM('en_attente','approuve','refuse') DEFAULT 'en_attente',
+	commentaire_client TEXT NULL,
+	date_decision_client DATETIME NULL,
 	date_soumission TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 	date_validation TIMESTAMP NULL,
 	FOREIGN KEY (projet_id) REFERENCES projets(id),
@@ -93,6 +100,9 @@ CREATE TABLE plans (
 	statut ENUM('brouillon','soumis','valide','rejete','archive') DEFAULT 'brouillon',
 	partage_client TINYINT(1) DEFAULT 0,
 	commentaire TEXT NULL,
+	client_decision ENUM('en_attente','approuve','refuse') DEFAULT 'en_attente',
+	commentaire_client TEXT NULL,
+	date_decision_client DATETIME NULL,
 	date_upload TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 	FOREIGN KEY (projet_id) REFERENCES projets(id),
 	FOREIGN KEY (dessinateur_id) REFERENCES utilisateurs(id)

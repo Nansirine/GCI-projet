@@ -31,7 +31,8 @@ if ($user_id) {
           <li class="nav-item"><a class="nav-link" href="/gestion_projet/admin/dashboard.php">Tableau de bord</a></li>
           <li class="nav-item"><a class="nav-link" href="/gestion_projet/admin/projets.php">Projets</a></li>
           <li class="nav-item"><a class="nav-link" href="/gestion_projet/admin/taches.php">Tâches</a></li>
-          <li class="nav-item"><a class="nav-link" href="/gestion_projet/admin/utilisateurs.php">Utilisateurs</a></li>
+          <li class="nav-item"><a class="nav-link" href="/gestion_projet/admin/alertes.php">Alertes</a></li>
+          <li class="nav-item"><a class="nav-link" href="/gestion_projet/admin/utilisateurs.php">Administrateur</a></li>
           <li class="nav-item"><a class="nav-link" href="/gestion_projet/admin/rapports.php">Rapports</a></li>
           <li class="nav-item"><a class="nav-link" href="/gestion_projet/admin/statistiques.php">Statistiques</a></li>
         <?php elseif ($role === 'ingenieur'): ?>
@@ -76,7 +77,6 @@ if ($user_id) {
           <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
             <li><span class="dropdown-item-text"><strong><?php echo htmlspecialchars($prenom . ' ' . $nom); ?></strong><br><small class="text-muted"><?php echo htmlspecialchars($role); ?></small></span></li>
             <li><hr class="dropdown-divider"></li>
-            <li><a class="dropdown-item" href="/gestion_projet/<?php echo $role; ?>/profil.php">Mon Profil</a></li>
             <li><a class="dropdown-item" href="/gestion_projet/logout.php">Se Déconnecter</a></li>
           </ul>
         </li>
